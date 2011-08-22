@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>DiscoBro</title>
+<link href="style.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="sparql.js"> </script>
+</head>
+
+<body backgroung="#FFFFFF" >
+
+<div id="searcharea">
+</div>
+
+<div style="width: 800px" ID="pagearea">
+</div>
+
+<div style="position: absolute; left: 820px; top: 10px" ID="panelarea">
+ </div>
+
+</body>
+
+  <script type="text/javascript">
+
+
+ function hashCode (str){
+   // alert("hash of "+str);
+    var hash = 0;
+    if (str.length == 0) return hash;
+    for (i = 0; i < str.length; i++) {
+        char = str.charCodeAt(i);
+        hash = ((hash<<5)-hash)+char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+   // alert(hash);
+    return hash;
+}
+
+function callRESTJ(url, cb_fct, params){
+  var xmlhttp = null;
+if (window.XMLHttpRequest) {
+  xmlhttp = new XMLHttpRequest();
+  if ( typeof xmlhttp.overrideMimeType != 'undefined') { 
+    xmlhttp.overrideMimeType('text/xml'); 
+  }
+
+} else if (window.ActiveXObject) {
+  xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+} else {
+  alert('Perhaps your browser does not support xmlhttprequests?');
+}
+xmlhttp.onreadystatechange = function() {
+  if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+//       alert(xmlhttp.responseText);
+       cb_fct(eval ("("+xmlhttp.responseText+")"), params);
+  } else { }
+};
+xmlhttp.open('GET', url, true);
+xmlhttp.setRequestHeader("Accept", "application/json");
+xmlhttp.send(null);
+}
+ 
+function callREST(url, cb_fct, params){
+  var xmlhttp = null;
+if (window.XMLHttpRequest) {
+  xmlhttp = new XMLHttpRequest();
+  if ( typeof xmlhttp.overrideMimeType != 'undefined') { 
+    xmlhttp.overrideMimeType('text/xml'); 
+  }
+
+} else if (window.ActiveXObject) {
+  xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+} else {
+  alert('Perhaps your browser does not support xmlhttprequests?');
+}
+xmlhttp.onreadystatechange = function() {
+  if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+       cb_fct(xmlhttp.responseText, params);
+  } else { }
+};
+xmlhttp.open('GET', url, true);
+// xmlhttp.setRequestHeader("Accept", "application/json");
+xmlhttp.send(null);
+}
+ 
+function gup( name )
+{
+  name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+  var regexS = "[\\?&]"+name+"=([^&#]*)";
+  var regex = new RegExp( regexS );
+  var results = regex.exec( window.location.href );
+  if( results == null )
+    return "";
+  else
+    return results[1];
+}
+
+
+url = gup('url');
+if (url == null || url==""){
+     displayForm();
+} else {
+     displayPage(url);
+     displayDiscoBroPanel(url);
+}
+
+function displayForm(){
+elem = document.getElementById('searcharea');
+elem.innerHTML='<div style="margin-left: 20px; margin-top: 20px; text-align: center; height: 70px;">'+
+   "<table><tr>  "+
+  '<td id="logo"></td>'+ 
+  '<td align="left" valign="center">'+
+    '<form id="SimpleSearchForm" action="" method="GET">'+
+    '<input type="text" name="url" id="urlvalue" value="" size="100" />'+
+    '<input type="submit" name="submit" text="submit" value="submit" />'+
+    '</form> You can also use the following <a name="DiscoBro" title="DiscoBro" href="javascript:(function() {window.location=\'http://mean-tech.com/discobro/discobro.html?url=\'+window.location.toString()})()">Bookmarklet</a>'+
+  '</td></tr></table>'+
+  '</div>';
+}
+
+function displayPage(url){
+   elem = document.getElementById('pagearea');
+   //elem.innerHTML=unescape(url)+"<br/>";
+   elem.innerHTML='<iframe src="'+unescape(url)+'" height="10000" width="100%"><p>Your browser does not support iframes.</p></iframe>';
+}
+  
+function displayDiscoBroPanel(url){
+  document.getElementById("panelarea").innerHTML="Loading...";
+  callREST("gettext.php?url="+url, textCallBack, "");
+}
+
+  function textCallBack(text, p){
+     textarray = text.split(" ");
+    // alert(textarray.length+" words");
+     var curtext = "";
+     var count = 0;
+         document.getElementById("panelarea").innerHTML="";
+ 
+     for (var word in textarray){
+           curtext = curtext + " " + textarray[word];
+           count = count + 1;
+           if (count == 100){
+               var params="text="+escape(curtext)+"&confidence=0.5&support=50";
+              // alert("dbpedia-spot.php?"+params);
+               callRESTJ("dbpedia-spot.php?"+params, processDPSResults);
+               curtext= "";
+               count = 0;
+           } 
+     }
+     var params="text="+escape(curtext)+"&confidence=0.5&support=50";
+//     alert("dbpedia-spot.php?"+params);
+     callRESTJ("dbpedia-spot.php?"+params, processDPSResults);
+  }
+
+var currentElements = new Array();
+
+function emphasize(eid){
+  rightind = 0;
+  for (ind in currentElements){
+  if (document.getElementById(currentElements[ind]).getAttribute("class")!="wptitledev")
+           document.getElementById(currentElements[ind]).setAttribute("class", "wptitle");
+      if (currentElements[ind]=="title-"+eid) rightind = ind;
+  }
+  if (document.getElementById("title-"+eid).getAttribute("class") != "wptitledev") 
+        document.getElementById("title-"+eid).setAttribute("class", "wptitle0");
+  if (rightind < currentElements.length-1)
+         if (document.getElementById(currentElements[parseInt(rightind)+1]).getAttribute("class") != "wptitledev") 
+              document.getElementById(currentElements[parseInt(rightind)+1]).setAttribute("class", "wptitle1");
+  if (rightind < currentElements.length-2)
+        if (document.getElementById(currentElements[parseInt(rightind)+2]).getAttribute("class") !="wptitledev") 
+               document.getElementById(currentElements[parseInt(rightind)+2]).setAttribute("class", "wptitle2");
+  if (rightind < currentElements.length-3)
+        if (document.getElementById(currentElements[parseInt(rightind)+3]).getAttribute("class") !="wptitledev") 
+             document.getElementById(currentElements[parseInt(rightind)+3]).setAttribute("class", "wptitle3");  
+ 
+  if (rightind > 0)
+       if (document.getElementById(currentElements[rightind-1]).getAttribute("class") !="wptitledev") 
+         document.getElementById(currentElements[rightind-1]).setAttribute("class", "wptitle1");
+  if (rightind > 1) 
+       if (document.getElementById(currentElements[rightind-2]).getAttribute("class") !="wptitledev") 
+          document.getElementById(currentElements[rightind-2]).setAttribute("class", "wptitle2");
+  if (rightind > 2) 
+       if (document.getElementById(currentElements[rightind-3]).getAttribute("class") !="wptitledev") 
+               document.getElementById(currentElements[rightind-3]).setAttribute("class", "wptitle3");
+ }
+  
+function processDPSResults (obj){
+  // alert(obj);
+  var reselem = document.getElementById("panelarea");
+  // reselem.innerHTML = "";
+ for (var x in obj['Resources']){
+    if (document.getElementById("rid"+hashCode(obj['Resources'][x]['@URI']))==null){
+     var rid = "rid"+hashCode(obj['Resources'][x]['@URI']);
+     reselem.innerHTML += '<span class="wptitle" onmouseover="javascript:emphasize(\''+rid+'\');" ID="title-'+rid+'"><a href="' + obj['Resources'][x]['@URI'] + '" target="_">'+obj['Resources'][x]['@surfaceForm']+"</a></span><br/>";
+     reselem.innerHTML += '<div class="summary" ID="'+rid+'"></div>';
+     getSummary(obj['Resources'][x]['@URI'], rid);
+     currentElements[currentElements.length] = "title-"+rid;
+  }
+     }
+}
+
+function getSummary(uri, rid){
+    var sparqler = new SPARQL.Service("locah_endpoint.php");
+    var query = sparqler.createQuery();
+    var squery = 'select ?x ?p WHERE {?x ?p <'+uri+'>}';
+   // alert("query = "+squery);
+    query.query(squery, {failure: failed, success: function(json){processSummary(json, rid, "Archive Hub");}});
+    sparqler = new SPARQL.Service("musicnet_endpoint.php");
+    query = sparqler.createQuery();
+    query.query(squery, {failure: failed, success: function(json){processSummary(json, rid, "MusicNet");}});
+   // sparqler = new SPARQL.Service("doau_endpoint.php");
+    //query = sparqler.createQuery();
+    //query.query(squery, {failure: failed, success: function(json){processSummary(json, rid, "data.open.ac.uk");}});
+}
+
+function failed(){
+     alert("query failed");
+ }
+    
+function processSummary(json, rid, dataset){
+  var sumelem = document.getElementById(rid);
+  // sumelem.innerHTML = "";
+  if (json['results']['bindings'].length!=0) {
+     // alert("treating something");
+  if (sumelem!=null) {
+    for (var x in json['results']['bindings']) {
+     document.getElementById("title-"+rid).setAttribute("class", "wptitledev");
+    if (json['results']['bindings'][x]['x']['type'] == 'uri'){
+    // alert("here "+json['results']['bindings'][x]['p']['value']+" "+json['results']['bindings'][x]['x']['value']);      
+      sumelem.innerHTML += '<a href="'+json['results']['bindings'][x]['p']['value']+'"><strong>'+getFragment(json['results']['bindings'][x]['p']['value'])+'</strong></a> of <a href="'+json['results']['bindings'][x]['x']['value']+'">'+getFragment(json['results']['bindings'][x]['x']['value'])+"</a><br/>";
+      }
+     else {
+        sumelem.innerHTML += '<a href="'+json['results']['bindings'][x]['p']['value']+'"><strong>'+getFragment(json['results']['bindings'][x]['p']['value'])+'</strong></a> of '+json['results']['bindings'][x]['x']['value']+"<br/>";
+     }
+        sumelem.innerHTML += '<div class="provenance">from '+dataset+' dataset</div>'; 
+    }
+  }
+     }
+}
+
+function getFragment(uri){
+   var ind = uri.lastIndexOf("/")+1;
+   if (ind == uri.length) return uri;
+   return uri.substring(ind);
+}
+
+     
+</script>
+</html>
