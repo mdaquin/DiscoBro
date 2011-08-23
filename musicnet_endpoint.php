@@ -5,7 +5,7 @@ if (!isset($base) || $base==null){
   $base = $_POST['base'];
 }  
 
-  $url = "http://api.kasabi.com/dataset/musicnet/apis/sparql?apikey=8314e4a950e6b62eefc66d5f3f2061ffaf1de742&";
+  $url = "http://api.kasabi.com/dataset/musicnet/apis/sparql?apikey=sorryiamnotgointtogiveyoumykey&";
   $first = true;
   foreach ($_GET as $p=>$v){
     if ($first==false){
